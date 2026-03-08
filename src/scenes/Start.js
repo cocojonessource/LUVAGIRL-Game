@@ -1,3 +1,4 @@
+```javascript
 export class Start extends Phaser.Scene {
 
     constructor() {
@@ -23,7 +24,20 @@ export class Start extends Phaser.Scene {
         this.isGameOver = false;
 
         this.ship = this.add.image(180, 550, 'LuvaGirl').setScale(0.22);
+
+        // desktop keyboard support
         this.cursors = this.input.keyboard.createCursorKeys();
+
+        // mobile touch dragging
+        this.input.on('pointerdown', (pointer) => {
+            this.ship.x = Phaser.Math.Clamp(pointer.x, 30, 330);
+        });
+
+        this.input.on('pointermove', (pointer) => {
+            if (pointer.isDown) {
+                this.ship.x = Phaser.Math.Clamp(pointer.x, 30, 330);
+            }
+        });
 
         this.items = this.add.group();
 
@@ -295,11 +309,7 @@ export class Start extends Phaser.Scene {
                 symbol: '🍅',
                 value: 1,
                 kind: 'bad',
-                fontSize: '26px',
-                stroke: '#000000',
-                strokeThickness: 0,
-                glow: false,
-                glowColor: '#000000'
+                fontSize: '26px'
             };
         }
 
@@ -307,11 +317,7 @@ export class Start extends Phaser.Scene {
             symbol: '🏆',
             value: 10,
             kind: 'bonus',
-            fontSize: '28px',
-            stroke: '#ffe082',
-            strokeThickness: 2,
-            glow: true,
-            glowColor: '#ffd700'
+            fontSize: '28px'
         };
     }
 
@@ -324,10 +330,6 @@ export class Start extends Phaser.Scene {
         if (kind === 'good') {
             this.heartsCaught += value;
             this.heartsNumberText.setText(String(this.heartsCaught));
-
-            if (value === 2) {
-                this.showFloatingScore('+2');
-            }
             return;
         }
 
@@ -335,7 +337,6 @@ export class Start extends Phaser.Scene {
             this.heartsCaught += value;
             this.heartsNumberText.setText(String(this.heartsCaught));
             this.grammyCaught = true;
-            this.showFloatingScore('Grammy Bonus +10');
             return;
         }
 
@@ -360,81 +361,6 @@ export class Start extends Phaser.Scene {
         else this.livesText.setText('X X X');
     }
 
-    checkLevelProgress() {
-        if (this.heartsCaught >= 100 && !this.legendaryShown) {
-            this.legendaryShown = true;
-            this.currentLevelName = 'Legendary Level';
-            this.showLevelMessage('Legendary Level Reached');
-            return;
-        }
-
-        if (this.heartsCaught >= 60 && !this.iconLevelShown) {
-            this.iconLevelShown = true;
-            this.currentLevelName = 'ICON Level';
-            this.currentFallSpeed = 8;
-            this.showLevelMessage('ICON Level Reached');
-            return;
-        }
-
-        if (this.heartsCaught >= 30 && !this.superStarShown) {
-            this.superStarShown = true;
-            this.currentLevelName = 'Super Star Level';
-            this.grammyUnlocked = true;
-            this.showLevelMessage('Super Star Level Reached');
-            return;
-        }
-
-        if (this.heartsCaught >= 20 && this.currentFallSpeed < 6) {
-            this.currentFallSpeed = 6;
-            return;
-        }
-
-        if (this.heartsCaught >= 15 && !this.starLevelShown) {
-            this.starLevelShown = true;
-            this.currentLevelName = 'Star Level';
-            this.showLevelMessage('Star Level Reached');
-            return;
-        }
-
-        if (this.heartsCaught >= 5 && this.currentFallSpeed < 4) {
-            this.currentFallSpeed = 4;
-        }
-    }
-
-    showLevelMessage(text) {
-        const levelText = this.add.text(180, 245, text, {
-            fontSize: '18px',
-            color: '#ffff00',
-            stroke: '#000',
-            strokeThickness: 3
-        }).setOrigin(0.5);
-
-        this.tweens.add({
-            targets: levelText,
-            alpha: 0,
-            delay: 1000,
-            duration: 900,
-            onComplete: () => { levelText.destroy(); }
-        });
-    }
-
-    showFloatingScore(text) {
-        const msg = this.add.text(this.ship.x, this.ship.y - 95, text, {
-            fontSize: '22px',
-            color: '#ffff66',
-            stroke: '#000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
-
-        this.tweens.add({
-            targets: msg,
-            y: msg.y - 55,
-            alpha: 0,
-            duration: 1200,
-            onComplete: () => { msg.destroy(); }
-        });
-    }
-
     endGame() {
         this.isGameOver = true;
 
@@ -447,8 +373,6 @@ export class Start extends Phaser.Scene {
         if (this.sound && this.cache.audio.exists('gameOverSound')) {
             this.sound.play('gameOverSound');
         }
-
-        const levelText = this.getFinalLevelName();
 
         this.add.rectangle(180, 320, 300, 390, 0x000000, 0.9);
 
@@ -470,26 +394,6 @@ export class Start extends Phaser.Scene {
             color: '#fff'
         }).setOrigin(0.5);
 
-        this.add.text(180, 365, levelText, {
-            fontSize: '16px',
-            color: '#fff'
-        }).setOrigin(0.5);
-
-        this.add.text(180, 415, 'Presave Luva Girl', {
-            fontSize: '18px',
-            color: '#ffff00'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true })
-        .on('pointerdown', () => {
-            window.open('https://link.fans/luvagirl', '_blank');
-        })
-        .on('pointerover', function () { this.setColor('#ff69b4'); })
-        .on('pointerout', function () { this.setColor('#ffff00'); });
-
-        this.add.text(180, 442, 'Made by Source', {
-            fontSize: '14px',
-            color: '#fff'
-        }).setOrigin(0.5);
-
         const playAgain = this.add.text(180, 492, 'Play Again', {
             fontSize: '18px',
             backgroundColor: '#333',
@@ -501,11 +405,5 @@ export class Start extends Phaser.Scene {
         });
     }
 
-    getFinalLevelName() {
-        if (this.heartsCaught >= 100) return 'Legendary Level';
-        if (this.heartsCaught >= 60) return 'ICON Level';
-        if (this.heartsCaught >= 30) return 'Super Star Level';
-        if (this.heartsCaught >= 15) return 'Star Level';
-        return 'Luva Girl';
-    }
 }
+```
